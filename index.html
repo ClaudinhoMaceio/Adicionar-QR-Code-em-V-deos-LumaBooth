@@ -67,15 +67,23 @@
 
     <!-- 1. ECRÃ DE CONFIGURAÇÃO INICIAL (Painel de Controlo) -->
     <div id="setupScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950 p-6 overflow-y-auto">
-        <div class="max-w-2xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-8">
+        <div class="max-w-2xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 my-8">
             
             <!-- Cabeçalho -->
             <div class="text-center space-y-2">
-                <div class="inline-flex bg-pink-500/10 text-pink-500 p-3 rounded-2xl mb-2">
+                <div class="inline-flex bg-pink-500/10 text-pink-500 p-3 rounded-2xl mb-1">
                     <i data-lucide="party-popper" class="w-8 h-8"></i>
                 </div>
                 <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">Configuração do Ecrã da Festa</h1>
                 <p class="text-sm text-gray-400">Configure o vídeo e o QR Code que serão exibidos na TV ou projetor.</p>
+                
+                <!-- Botão de Instalação PWA (Apenas visível se puder ser instalado) -->
+                <div id="pwaInstallContainer" class="hidden justify-center pt-2">
+                    <button id="btnInstallPWA" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center space-x-2 shadow-lg shadow-pink-600/10">
+                        <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                        <span>Instalar Aplicação na TV/Telemóvel 📲</span>
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -126,7 +134,7 @@
                             <span class="bg-pink-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
                             <h2>QR Code Fixo do Evento</h2>
                         </div>
-                        <p class="text-xs text-gray-400 mb-4">Carregue a imagem do QR Code. Ela ficará **guardada na nuvem** de forma permanente!</p>
+                        <p class="text-xs text-gray-400 mb-4">Carregue a imagem do QR Code. Ela ficará **guardada de forma permanente**!</p>
 
                         <!-- Upload do QR Code do Utilizador -->
                         <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-pink-500/50 rounded-xl p-4 text-center transition-all relative">
@@ -166,10 +174,10 @@
             <!-- Botão de Iniciar Apresentação -->
             <div class="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
                 <div class="text-left">
-                    <span class="text-xs text-gray-400 block">Sincronizado na nuvem em tempo real.</span>
+                    <span class="text-xs text-gray-400 block">Sincronizado de forma segura.</span>
                     <span id="syncIndicator" class="text-[10px] text-emerald-500 font-medium flex items-center space-x-1">
                         <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping mr-1"></span>
-                        Ligação de dados segura ativa
+                        <span id="syncText">A iniciar conexão segura...</span>
                     </span>
                 </div>
                 <button 
@@ -289,21 +297,112 @@
 
     </div>
 
+    <!-- Script de Inicialização e Registro de PWA Dinâmico -->
+    <script>
+        // Configuração do Manifesto Web do PWA
+        const pwaManifest = {
+            "name": "Ecrã de Festa Inteligente",
+            "short_name": "EcrãFesta",
+            "description": "Reprodutor inteligente de vídeo e QR Code para a sua festa.",
+            "start_url": window.location.href,
+            "display": "standalone",
+            "background_color": "#0d0d12",
+            "theme_color": "#ec4899",
+            "orientation": "landscape",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23ec4899'><circle cx='50' cy='50' r='40'/><path d='M35,50 L45,60 L65,40' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>",
+                    "sizes": "192x192",
+                    "type": "image/svg+xml"
+                },
+                {
+                    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23ec4899'><circle cx='50' cy='50' r='40'/><path d='M35,50 L45,60 L65,40' stroke='white' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>",
+                    "sizes": "512x512",
+                    "type": "image/svg+xml"
+                }
+            ]
+        };
+
+        // Injetar a tag do manifesto no cabeçalho do documento
+        const manifestBlob = new Blob([JSON.stringify(pwaManifest)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = manifestURL;
+        document.head.appendChild(manifestLink);
+
+        // Registro Dinâmico do Service Worker embutido
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                const CACHE_NAME = 'festa-pwa-cache-v1';
+                self.addEventListener('install', (event) => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(clients.claim());
+                });
+                self.addEventListener('fetch', (event) => {
+                    // Ignora requisições de API de terceiros como o Firestore ou allorigins para evitar quebras
+                    if (event.request.url.includes('firebase') || event.request.url.includes('allorigins')) {
+                        return;
+                    }
+                    event.respondWith(
+                        caches.match(event.request).then((response) => {
+                            return response || fetch(event.request);
+                        })
+                    );
+                });
+            `;
+            const swBlob = new Blob([swCode], {type: 'application/javascript'});
+            const swURL = URL.createObjectURL(swBlob);
+            
+            navigator.serviceWorker.register(swURL).then((reg) => {
+                console.log('PWA Service Worker registado com sucesso.');
+            }).catch((err) => {
+                console.warn('Erro ao registar Service Worker PWA:', err);
+            });
+        }
+
+        // Gestão do Evento de Instalação do PWA
+        let deferredPrompt;
+        const pwaInstallContainer = document.getElementById('pwaInstallContainer');
+        const btnInstallPWA = document.getElementById('btnInstallPWA');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Impedir que o browser mostre a faixa padrão
+            e.preventDefault();
+            // Guardar o evento para que possa ser acionado mais tarde
+            deferredPrompt = e;
+            // Exibir o botão elegante de instalação
+            pwaInstallContainer.classList.remove('hidden');
+            pwaInstallContainer.classList.add('flex');
+        });
+
+        btnInstallPWA.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            // Mostrar o banner de instalação
+            deferredPrompt.prompt();
+            // Esperar pela resposta do utilizador
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('Utilizador aceitou instalar o PWA.');
+                pwaInstallContainer.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('Aplicação da Festa instalada com sucesso como PWA!');
+            pwaInstallContainer.classList.add('hidden');
+        });
+    </script>
+
     <!-- Firebase SDK e Lógica da Aplicação -->
     <script type="module">
         // Importar Firebase Core, Auth e Firestore de acordo com as regras ambientais obrigatórias
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Variáveis globais de ambiente fornecidas pela plataforma
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(__firebase_config);
-
-        // Inicializar instâncias Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
 
         // Elementos globais do DOM
         const setupScreen = document.getElementById('setupScreen');
@@ -325,6 +424,8 @@
         const btnResetQr = document.getElementById('btnResetQr');
         const qrDbStatus = document.getElementById('qrDbStatus');
         const syncLiveStatus = document.getElementById('syncLiveStatus');
+        const syncIndicator = document.getElementById('syncIndicator');
+        const syncText = document.getElementById('syncText');
 
         // Estado da Aplicação
         let currentUser = null;
@@ -335,6 +436,23 @@
         let autoUpdateIntervalId = null;
         let controlsTimeout = null;
 
+        // Deteção Inteligente de Ambiente (Nuvem ou Ficheiro Local Autónomo)
+        let useFirebase = false;
+        let app, auth, db, appId;
+
+        try {
+            appId = typeof __app_id !== 'undefined' ? __app_id : null;
+            if (appId && typeof __firebase_config !== 'undefined' && __firebase_config) {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                useFirebase = true;
+            }
+        } catch (e) {
+            console.warn("A correr em modo offline/local autónomo (fora da plataforma).");
+        }
+
         // Link padrão
         const DEFAULT_URL = "https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
         const DEFAULT_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
@@ -342,80 +460,125 @@
         // Inicializar os ícones Lucide
         lucide.createIcons();
 
-        // 1. INICIALIZAÇÃO DE AUTENTICAÇÃO SEGURA (REGRA 3)
+        // 1. INICIALIZAÇÃO E DETEÇÃO DE AMBIENTE (REGRA 3)
         window.addEventListener('load', async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
+            if (useFirebase) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (err) {
+                    console.error("Erro na autenticação primária:", err);
+                    activateLocalMode();
                 }
-            } catch (err) {
-                console.error("Erro na autenticação primária:", err);
-                showToast("Aviso", "A funcionar em modo local seguro temporariamente.", "alert-triangle");
-            }
-        });
-
-        // Ouvir alterações de estado de autenticação para carregar dados salvos
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                // Caminho privado seguro no Firestore (REGRA 1)
-                configDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
-                await loadSavedConfig();
             } else {
-                loadingScreen.classList.add('hidden');
+                activateLocalMode();
             }
         });
 
-        // 2. CARREGAR CONFIGURAÇÃO DO FIRESTORE (REGRA 2)
+        // Configuração do Modo Local Autónomo (Para rodar fora do chat/plataforma sem dar erro)
+        function activateLocalMode() {
+            useFirebase = false;
+            syncIndicator.innerHTML = `
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1"></span>
+                <span>Modo Local Autónomo Ativo</span>
+            `;
+            // Carregar as configurações guardadas localmente no browser
+            loadLocalFallback();
+            loadingScreen.classList.add('hidden');
+        }
+
+        if (useFirebase) {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = user;
+                    // Caminho privado seguro no Firestore (REGRA 1)
+                    configDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
+                    syncText.innerText = "Ligação estável à nuvem ativa";
+                    await loadSavedConfig();
+                } else {
+                    loadingScreen.classList.add('hidden');
+                }
+            });
+        }
+
+        // 2. CARREGAR CONFIGURAÇÃO (Firestore com Fallback Seguro para LocalStorage)
         async function loadSavedConfig() {
             try {
                 if (!configDocRef) return;
                 const docSnap = await getDoc(configDocRef);
                 
                 if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    
-                    if (data.galleryUrl) {
-                        videoUrlInput.value = data.galleryUrl;
-                    }
-
-                    if (data.qrCodeBase64) {
-                        qrCodeBase64 = data.qrCodeBase64;
-                        uploadedQrPreview.src = qrCodeBase64;
-                        uploadedQrPreview.classList.remove('hidden');
-                        uploadCloudIcon.classList.add('hidden');
-                        uploadText.innerText = "Novo QR Code Guardado em Segurança!";
-                        btnResetQr.classList.remove('hidden');
-                        qrDbStatus.innerText = "QR Code Carregado Guardado com sucesso!";
-                        autoQrCheckbox.checked = false;
-                    }
-                    showToast("Configurações Carregadas", "QR Code e link sincronizados com sucesso!", "check-check");
+                    applyLoadedConfig(docSnap.data());
+                    showToast("Configurações Carregadas", "QR Code e link sincronizados com a nuvem!", "check-check");
+                } else {
+                    loadLocalFallback();
                 }
             } catch (error) {
                 console.error("Erro ao carregar dados salvos:", error);
-                showToast("Erro", "Não foi possível resgatar o QR Code guardado automaticamente.", "alert-octagon");
+                loadLocalFallback();
             } finally {
                 loadingScreen.classList.add('hidden');
             }
         }
 
-        // 3. SALVAR CONFIGURAÇÕES NA NUVEM (REGRA 1)
-        async function saveConfigToCloud() {
-            if (!currentUser || !configDocRef) return;
-
+        function loadLocalFallback() {
             try {
-                await setDoc(configDocRef, {
-                    galleryUrl: videoUrlInput.value.trim(),
-                    qrCodeBase64: qrCodeBase64,
-                    updatedAt: new Date().toISOString()
-                }, { merge: true });
+                const localData = localStorage.getItem('party_screen_config');
+                if (localData) {
+                    const data = JSON.parse(localData);
+                    applyLoadedConfig(data);
+                    showToast("Configurações Locais", "Configurações restauradas do seu navegador com sucesso!", "check-check");
+                }
+            } catch (e) {
+                console.error("Erro ao ler LocalStorage local:", e);
+            }
+        }
 
-                showToast("Sincronizado", "QR Code e configurações salvos em segurança na nuvem!", "cloud-lightning");
-            } catch (error) {
-                console.error("Erro ao guardar dados:", error);
-                showToast("Erro de Sincronização", "Ocorreu um erro ao salvar configurações.", "alert-octagon");
+        function applyLoadedConfig(data) {
+            if (data.galleryUrl) {
+                videoUrlInput.value = data.galleryUrl;
+            }
+
+            if (data.qrCodeBase64) {
+                qrCodeBase64 = data.qrCodeBase64;
+                uploadedQrPreview.src = qrCodeBase64;
+                uploadedQrPreview.classList.remove('hidden');
+                uploadCloudIcon.classList.add('hidden');
+                uploadText.innerText = "Novo QR Code Guardado!";
+                btnResetQr.classList.remove('hidden');
+                qrDbStatus.innerText = "QR Code Carregado e Ativo!";
+                autoQrCheckbox.checked = false;
+            }
+        }
+
+        // 3. SALVAR CONFIGURAÇÕES (Salva sempre no LocalStorage para funcionar fora do chat + Firestore se ativo)
+        async function saveConfigToCloud() {
+            const configData = {
+                galleryUrl: videoUrlInput.value.trim(),
+                qrCodeBase64: qrCodeBase64,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Guarda sempre localmente no navegador (Evita perder dados ao atualizar fora do chat!)
+            try {
+                localStorage.setItem('party_screen_config', JSON.stringify(configData));
+            } catch (e) {
+                console.error("Erro ao salvar LocalStorage local:", e);
+            }
+
+            if (useFirebase && currentUser && configDocRef) {
+                try {
+                    await setDoc(configDocRef, configData, { merge: true });
+                    showToast("Sincronizado", "QR Code e configurações salvos em segurança na nuvem!", "cloud-lightning");
+                } catch (error) {
+                    console.error("Erro ao guardar dados:", error);
+                    showToast("Erro de Sincronização", "Ocorreu um erro ao salvar na nuvem.", "alert-octagon");
+                }
+            } else {
+                showToast("Guardado Localmente", "Configurações guardadas neste navegador!", "check-circle");
             }
         }
 
@@ -554,7 +717,7 @@
                 return;
             }
 
-            // Guardar as configurações finais no banco de dados para nunca as perder ao reiniciar
+            // Guardar as configurações finais (LocalStorage garantido + Nuvem se ativa)
             await saveConfigToCloud();
 
             // Configurar QR Code exibido
