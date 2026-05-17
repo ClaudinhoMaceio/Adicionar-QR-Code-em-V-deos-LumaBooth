@@ -43,7 +43,27 @@
         }
     </style>
 </head>
-<body class="w-screen h-screen flex items-center justify-center text-white select-none">
+<body class="w-screen h-screen flex items-center justify-center text-white select-none relative">
+
+    <!-- Notificações Toast do Sistema -->
+    <div id="toastNotification" class="fixed top-6 right-6 z-[100] transform translate-y-[-100px] opacity-0 transition-all duration-500 bg-zinc-900 border border-zinc-800 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3">
+        <div id="toastIcon" class="p-1.5 bg-pink-500/10 text-pink-500 rounded-lg">
+            <i data-lucide="info" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <p id="toastTitle" class="text-xs font-bold text-gray-200">Notificação</p>
+            <p id="toastMessage" class="text-[11px] text-gray-400">Mensagem do sistema.</p>
+        </div>
+    </div>
+
+    <!-- Ecrã de Carregamento da Base de Dados -->
+    <div id="loadingScreen" class="absolute inset-0 z-[60] bg-zinc-950 flex flex-col items-center justify-center space-y-4">
+        <div class="relative w-16 h-16">
+            <div class="absolute inset-0 border-4 border-pink-500/20 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-t-pink-500 rounded-full animate-spin"></div>
+        </div>
+        <p class="text-sm text-gray-400 font-medium animate-pulse">A ligar à base de dados segura do evento...</p>
+    </div>
 
     <!-- 1. ECRÃ DE CONFIGURAÇÃO INICIAL (Painel de Controlo) -->
     <div id="setupScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950 p-6 overflow-y-auto">
@@ -65,9 +85,9 @@
                     <div>
                         <div class="flex items-center space-x-2 text-pink-500 font-bold mb-3">
                             <span class="bg-pink-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
-                            <h2>Ficheiro de Vídeo</h2>
+                            <h2>Sincronização de Vídeo</h2>
                         </div>
-                        <p class="text-xs text-gray-400 mb-4">Escolha a melhor opção para reproduzir o vídeo da festa:</p>
+                        <p class="text-xs text-gray-400 mb-4">Escolha a melhor opção para reproduzir os vídeos:</p>
                         
                         <!-- Opção A: Carregar Vídeo Local (Altamente Recomendado) -->
                         <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-pink-500/50 rounded-xl p-4 text-center transition-all">
@@ -87,8 +107,8 @@
                         <input 
                             type="text" 
                             id="videoUrlInput" 
-                            placeholder="https://dash.lumabooth.com/s/..." 
-                            value="https://dash.lumabooth.com/s/1471306010/9538120"
+                            placeholder="https://fotoshare.co/e/..." 
+                            value="https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ"
                             class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-pink-500"
                         />
                     </div>
@@ -104,34 +124,40 @@
                     <div>
                         <div class="flex items-center space-x-2 text-pink-500 font-bold mb-3">
                             <span class="bg-pink-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
-                            <h2>QR Code da Festa</h2>
+                            <h2>QR Code Fixo do Evento</h2>
                         </div>
-                        <p class="text-xs text-gray-400 mb-4">Carregue a imagem do QR Code que os convidados vão escanear:</p>
+                        <p class="text-xs text-gray-400 mb-4">Carregue a imagem do QR Code. Ela ficará **guardada na nuvem** de forma permanente!</p>
 
                         <!-- Upload do QR Code do Utilizador -->
-                        <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-pink-500/50 rounded-xl p-4 text-center transition-all">
-                            <input type="file" id="qrFileInput" accept="image/*" class="hidden" onchange="handleLocalQR(this)">
-                            <i data-lucide="qr-code" class="w-8 h-8 mx-auto text-gray-400 mb-2"></i>
-                            <span class="block text-xs font-semibold text-gray-300">Carregar qrcode_fotoshare.co.png</span>
-                            <span class="block text-[10px] text-gray-500 mt-1">Clique para selecionar a imagem</span>
+                        <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-pink-500/50 rounded-xl p-4 text-center transition-all relative">
+                            <input type="file" id="qrFileInput" accept="image/*" class="hidden" onchange="handleQRUpload(this)">
+                            <div id="qrUploadPreviewContainer" class="flex flex-col items-center">
+                                <i data-lucide="qr-code" class="w-8 h-8 mx-auto text-gray-400 mb-2" id="uploadCloudIcon"></i>
+                                <img id="uploadedQrPreview" src="" class="hidden w-16 h-16 object-contain rounded-lg border border-zinc-700 p-1 mb-2 bg-white" />
+                                <span class="block text-xs font-semibold text-gray-300" id="uploadText">Carregar Imagem do QR Code</span>
+                                <span class="block text-[10px] text-gray-500 mt-1">Clique para selecionar a imagem</span>
+                            </div>
                         </label>
 
                         <div class="relative flex py-3 items-center">
                             <div class="flex-grow border-t border-zinc-800"></div>
-                            <span class="flex-shrink mx-3 text-gray-600 text-[10px] uppercase font-bold">Ou Autogerado</span>
+                            <span class="flex-shrink mx-3 text-gray-600 text-[10px] uppercase font-bold">Autogeração</span>
                             <div class="flex-grow border-t border-zinc-800"></div>
                         </div>
 
                         <!-- Opção de QR Code Autogerado se não carregar nada -->
-                        <div class="flex items-center space-x-2 bg-zinc-900 p-2.5 rounded-xl border border-zinc-800">
-                            <input type="checkbox" id="autoQrCheckbox" checked class="accent-pink-500 h-4 w-4">
-                            <label for="autoQrCheckbox" class="text-xs text-gray-300">Gerar QR automaticamente a partir do link</label>
+                        <div class="flex items-center justify-between bg-zinc-900 p-2.5 rounded-xl border border-zinc-800">
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" id="autoQrCheckbox" checked class="accent-pink-500 h-4 w-4">
+                                <label for="autoQrCheckbox" class="text-xs text-gray-300">Gerar QR automaticamente</label>
+                            </div>
+                            <button onclick="resetToDefaultQr()" id="btnResetQr" class="hidden text-pink-500 hover:underline font-bold text-[10px]">Limpar QR</button>
                         </div>
                     </div>
 
                     <div id="qrStatus" class="text-[10px] text-zinc-500 mt-3 flex items-center space-x-1">
                         <i data-lucide="info" class="w-3.5 h-3.5"></i>
-                        <span>Usará o QR code gerado para o link.</span>
+                        <span id="qrDbStatus">Usará o QR Code padrão.</span>
                     </div>
                 </div>
 
@@ -140,8 +166,11 @@
             <!-- Botão de Iniciar Apresentação -->
             <div class="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
                 <div class="text-left">
-                    <span class="text-xs text-gray-400 block">Pronto para começar?</span>
-                    <span class="text-[10px] text-zinc-500 block">Recomenda-se colocar o navegador em Tela Cheia (F11) depois de iniciar.</span>
+                    <span class="text-xs text-gray-400 block">Sincronizado na nuvem em tempo real.</span>
+                    <span id="syncIndicator" class="text-[10px] text-emerald-500 font-medium flex items-center space-x-1">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping mr-1"></span>
+                        Ligação de dados segura ativa
+                    </span>
                 </div>
                 <button 
                     onclick="startPresentation()" 
@@ -212,7 +241,7 @@
             <div class="flex justify-between items-center w-full">
                 <div class="flex items-center space-x-3 bg-zinc-900/80 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
                     <span class="w-3.5 h-3.5 bg-emerald-500 rounded-full animate-ping"></span>
-                    <span class="text-white font-semibold text-xs md:text-sm tracking-wide">Modo de Exibição Ativo</span>
+                    <span id="syncLiveStatus" class="text-white font-semibold text-xs md:text-sm tracking-wide">Modo de Exibição Ativo</span>
                 </div>
                 
                 <div class="flex items-center space-x-3">
@@ -260,12 +289,23 @@
 
     </div>
 
+    <!-- Firebase SDK e Lógica da Aplicação -->
+    <script type="module">
+        // Importar Firebase Core, Auth e Firestore de acordo com as regras ambientais obrigatórias
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <script>
-        // Inicializar os ícones Lucide
-        lucide.createIcons();
+        // Variáveis globais de ambiente fornecidas pela plataforma
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(__firebase_config);
 
-        // Elementos globais
+        // Inicializar instâncias Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Elementos globais do DOM
         const setupScreen = document.getElementById('setupScreen');
         const presentationContainer = document.getElementById('presentationContainer');
         const presentationVideo = document.getElementById('presentationVideo');
@@ -278,14 +318,145 @@
         const autoQrCheckbox = document.getElementById('autoQrCheckbox');
         const presentationControls = document.getElementById('presentationControls');
         const localVideoControls = document.getElementById('localVideoControls');
-        
-        // Estado
+        const loadingScreen = document.getElementById('loadingScreen');
+        const uploadedQrPreview = document.getElementById('uploadedQrPreview');
+        const uploadCloudIcon = document.getElementById('uploadCloudIcon');
+        const uploadText = document.getElementById('uploadText');
+        const btnResetQr = document.getElementById('btnResetQr');
+        const qrDbStatus = document.getElementById('qrDbStatus');
+        const syncLiveStatus = document.getElementById('syncLiveStatus');
+
+        // Estado da Aplicação
+        let currentUser = null;
+        let configDocRef = null;
         let localVideoBlobUrl = null;
-        let localQrBlobUrl = null;
-        let controlsTimeout;
+        let qrCodeBase64 = null; // Guardará o QR Code em Base64
+        let lastPlayedVideoUrl = ""; // Controla o link do vídeo ativo para evitar loops
+        let autoUpdateIntervalId = null;
+        let controlsTimeout = null;
+
+        // Link padrão
+        const DEFAULT_URL = "https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
+        const DEFAULT_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
+
+        // Inicializar os ícones Lucide
+        lucide.createIcons();
+
+        // 1. INICIALIZAÇÃO DE AUTENTICAÇÃO SEGURA (REGRA 3)
+        window.addEventListener('load', async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Erro na autenticação primária:", err);
+                showToast("Aviso", "A funcionar em modo local seguro temporariamente.", "alert-triangle");
+            }
+        });
+
+        // Ouvir alterações de estado de autenticação para carregar dados salvos
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // Caminho privado seguro no Firestore (REGRA 1)
+                configDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
+                await loadSavedConfig();
+            } else {
+                loadingScreen.classList.add('hidden');
+            }
+        });
+
+        // 2. CARREGAR CONFIGURAÇÃO DO FIRESTORE (REGRA 2)
+        async function loadSavedConfig() {
+            try {
+                if (!configDocRef) return;
+                const docSnap = await getDoc(configDocRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    if (data.galleryUrl) {
+                        videoUrlInput.value = data.galleryUrl;
+                    }
+
+                    if (data.qrCodeBase64) {
+                        qrCodeBase64 = data.qrCodeBase64;
+                        uploadedQrPreview.src = qrCodeBase64;
+                        uploadedQrPreview.classList.remove('hidden');
+                        uploadCloudIcon.classList.add('hidden');
+                        uploadText.innerText = "Novo QR Code Guardado em Segurança!";
+                        btnResetQr.classList.remove('hidden');
+                        qrDbStatus.innerText = "QR Code Carregado Guardado com sucesso!";
+                        autoQrCheckbox.checked = false;
+                    }
+                    showToast("Configurações Carregadas", "QR Code e link sincronizados com sucesso!", "check-check");
+                }
+            } catch (error) {
+                console.error("Erro ao carregar dados salvos:", error);
+                showToast("Erro", "Não foi possível resgatar o QR Code guardado automaticamente.", "alert-octagon");
+            } finally {
+                loadingScreen.classList.add('hidden');
+            }
+        }
+
+        // 3. SALVAR CONFIGURAÇÕES NA NUVEM (REGRA 1)
+        async function saveConfigToCloud() {
+            if (!currentUser || !configDocRef) return;
+
+            try {
+                await setDoc(configDocRef, {
+                    galleryUrl: videoUrlInput.value.trim(),
+                    qrCodeBase64: qrCodeBase64,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+
+                showToast("Sincronizado", "QR Code e configurações salvos em segurança na nuvem!", "cloud-lightning");
+            } catch (error) {
+                console.error("Erro ao guardar dados:", error);
+                showToast("Erro de Sincronização", "Ocorreu um erro ao salvar configurações.", "alert-octagon");
+            }
+        }
+
+        // 4. TRATAR O CARREGAMENTO DE IMAGEM DO QR CODE
+        window.handleQRUpload = function(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    qrCodeBase64 = reader.result;
+                    uploadedQrPreview.src = qrCodeBase64;
+                    uploadedQrPreview.classList.remove('hidden');
+                    uploadCloudIcon.classList.add('hidden');
+                    uploadText.innerText = "QR Code Carregado com Sucesso!";
+                    btnResetQr.classList.remove('hidden');
+                    qrDbStatus.innerText = "QR Code Personalizado Ativo!";
+                    autoQrCheckbox.checked = false;
+                    
+                    await saveConfigToCloud();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        // Resetar para o QR Code padrão do dinossauro
+        window.resetToDefaultQr = async function() {
+            qrCodeBase64 = null;
+            uploadedQrPreview.src = "";
+            uploadedQrPreview.classList.add('hidden');
+            uploadCloudIcon.classList.remove('hidden');
+            uploadText.innerText = "Carregar Imagem do QR Code";
+            btnResetQr.classList.add('hidden');
+            qrDbStatus.innerText = "Usará o QR Code padrão.";
+            autoQrCheckbox.checked = true;
+            
+            await saveConfigToCloud();
+            showToast("Restaurado", "Retornou ao QR Code padrão.", "rotate-ccw");
+        };
 
         // Tratar o carregamento de vídeo local do computador
-        function handleLocalVideo(input) {
+        window.handleLocalVideo = function(input) {
             const file = input.files[0];
             if (file) {
                 if (localVideoBlobUrl) {
@@ -298,45 +469,105 @@
                 `;
                 lucide.createIcons();
             }
-        }
+        };
 
-        // Tratar o carregamento do QR Code personalizado do utilizador
-        function handleLocalQR(input) {
-            const file = input.files[0];
-            if (file) {
-                if (localQrBlobUrl) {
-                    URL.revokeObjectURL(localQrBlobUrl);
+        // 5. MONITORAMENTO DA GALERIA DO FOTOSHARE EM TEMPO REAL
+        async function fetchLatestGalleryItem(galleryUrl) {
+            try {
+                // Utilização de proxy CORS rápido para ler a galeria de forma síncrona
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(galleryUrl)}`;
+                const response = await fetch(proxyUrl);
+                if (!response.ok) return null;
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Extrair links de sessões ou links diretos de vídeo no HTML da galeria
+                const sessionLinks = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.getAttribute('href'))
+                    .filter(href => href && (href.includes('/g/') || href.includes('/s/')));
+
+                if (sessionLinks.length > 0) {
+                    const relativeLink = sessionLinks[0];
+                    return relativeLink.startsWith('http') ? relativeLink : `https://fotoshare.co${relativeLink}`;
                 }
-                localQrBlobUrl = URL.createObjectURL(file);
-                document.getElementById('qrStatus').innerHTML = `
-                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                    <span class="text-emerald-500 font-semibold">QR Code pronto: ${file.name}</span>
-                `;
-                autoQrCheckbox.checked = false; // Desativa autogeração porque o utilizador carregou uma imagem
-                lucide.createIcons();
+
+                // Fallback de segurança para arquivos MP4 diretos
+                const mp4Matches = html.match(/"url":"([^"]+\.mp4)"/) || html.match(/src="([^"]+\.mp4)"/);
+                if (mp4Matches && mp4Matches[1]) {
+                    return mp4Matches[1];
+                }
+
+                return null;
+            } catch (err) {
+                console.warn("Erro ao ler galeria. Tentando novamente...", err);
+                return null;
             }
         }
 
-        // Iniciar modo de apresentação
-        function startPresentation() {
+        // 6. MOTOR DE AUTO-SINCRONIZAÇÃO DE VÍDEOS
+        async function runAutoUpdateEngine() {
+            const galleryUrl = videoUrlInput.value.trim();
+            if (!galleryUrl) return;
+
+            syncLiveStatus.innerText = "A procurar novos vídeos na galeria...";
+            
+            let latestUrl = await fetchLatestGalleryItem(galleryUrl);
+
+            // Se for detetado um novo vídeo diferente do que está no ecrã neste momento, atualiza automaticamente
+            if (latestUrl && latestUrl !== lastPlayedVideoUrl) {
+                lastPlayedVideoUrl = latestUrl;
+                updatePresentationSource(latestUrl);
+                showToast("Novo Vídeo!", "Detetámos um novo vídeo do seu convidado! A reproduzir...", "sparkles");
+            } else {
+                syncLiveStatus.innerText = "Ecrã Ativo e Sincronizado";
+            }
+        }
+
+        function updatePresentationSource(sourceUrl) {
+            if (sourceUrl.endsWith('.mp4')) {
+                presentationIframe.src = "";
+                iframeContainer.classList.add('hidden');
+                
+                presentationVideo.src = sourceUrl;
+                presentationVideo.classList.remove('hidden');
+                localVideoControls.classList.remove('hidden');
+                presentationVideo.play().catch(e => console.log("Autoplay mitigado."));
+            } else {
+                presentationVideo.src = "";
+                presentationVideo.classList.add('hidden');
+                localVideoControls.classList.add('hidden');
+                
+                presentationIframe.src = sourceUrl;
+                iframeContainer.classList.remove('hidden');
+            }
+        }
+
+        // 7. INICIAR MODO APRESENTAÇÃO
+        window.startPresentation = async function() {
             const isUsingLocalVideo = !!localVideoBlobUrl;
             const videoUrl = videoUrlInput.value.trim();
 
-            // Configurar QR Code
-            if (localQrBlobUrl) {
-                // Usar o QR code que o utilizador carregou (Ficheiro local)
-                displayQrCode.src = localQrBlobUrl;
-            } else if (autoQrCheckbox.checked && videoUrl) {
-                // Gerar automaticamente usando API de QR Code
-                displayQrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(videoUrl)}`;
-            } else {
-                // QR Code Padrão se nada estiver selecionado
-                displayQrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://dash.lumabooth.com/s/1471306010/9538120`;
+            if (!videoUrl && !isUsingLocalVideo) {
+                showToast("Falta o link", "Por favor preencha o link da galeria do FotoShare.", "alert-circle");
+                return;
             }
 
-            // Configurar Vídeo
+            // Guardar as configurações finais no banco de dados para nunca as perder ao reiniciar
+            await saveConfigToCloud();
+
+            // Configurar QR Code exibido
+            if (qrCodeBase64) {
+                displayQrCode.src = qrCodeBase64;
+            } else if (autoQrCheckbox.checked && videoUrl) {
+                displayQrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(videoUrl)}`;
+            } else {
+                displayQrCode.src = DEFAULT_QR_URL;
+            }
+
+            // Definir o ecrã inicial de vídeo
             if (isUsingLocalVideo) {
-                // Usar vídeo local (Opção mais estável)
                 presentationIframe.src = "";
                 iframeContainer.classList.add('hidden');
                 
@@ -345,36 +576,40 @@
                 localVideoControls.classList.remove('hidden');
                 
                 presentationVideo.play().catch(err => {
-                    console.log("Autoplay bloqueado. Aguardando interação.");
+                    console.log("Autoplay bloqueado pelo navegador.");
                 });
             } else {
-                // Usar link da Web do LumaBooth (Iframe)
-                presentationVideo.src = "";
-                presentationVideo.classList.add('hidden');
-                localVideoControls.classList.add('hidden');
-                
-                presentationIframe.src = videoUrl;
-                iframeContainer.classList.remove('hidden');
+                lastPlayedVideoUrl = videoUrl;
+                updatePresentationSource(videoUrl);
             }
 
             // Alternar Ecrãs
             setupScreen.classList.add('hidden');
             presentationContainer.classList.remove('hidden');
+
+            // Iniciar o motor de sincronização automática e em tempo real dos vídeos
+            if (!isUsingLocalVideo) {
+                runAutoUpdateEngine();
+                autoUpdateIntervalId = setInterval(runAutoUpdateEngine, 20000); // Verifica novos uploads a cada 20 segundos
+            }
             
             resetControlsTimer();
-        }
+            showToast("Apresentação Iniciada", "Use a tecla F11 para deixar a TV em tela cheia total!", "monitor-play");
+        };
 
         // Voltar ao Painel de Configurações
-        function exitPresentation() {
-            // Pausar vídeo se estiver a reproduzir localmente
+        window.exitPresentation = function() {
+            if (autoUpdateIntervalId) {
+                clearInterval(autoUpdateIntervalId);
+                autoUpdateIntervalId = null;
+            }
             presentationVideo.pause();
-
             presentationContainer.classList.add('hidden');
             setupScreen.classList.remove('hidden');
-        }
+        };
 
         // CONTROLOS DO VÍDEO LOCAL
-        function togglePlay() {
+        window.togglePlay = function() {
             const playIcon = document.getElementById('playIcon');
             if (presentationVideo.paused) {
                 presentationVideo.play();
@@ -384,9 +619,9 @@
                 updateIcon(playIcon, 'play');
             }
             resetControlsTimer();
-        }
+        };
 
-        function toggleMute() {
+        window.toggleMute = function() {
             const muteIcon = document.getElementById('muteIcon');
             presentationVideo.muted = !presentationVideo.muted;
             if (presentationVideo.muted) {
@@ -395,28 +630,76 @@
                 updateIcon(muteIcon, 'volume-2');
             }
             resetControlsTimer();
-        }
+        };
 
-        // ALTERNAR TELA CHEIA DO NAVEGADOR
-        function toggleFullscreen() {
+        // ALTERNAR TELA CHEIA DO NAVEGADOR COM CAPTURA DE ERRO DE POLÍTICA (PREVINE TRAVAMENTOS)
+        window.toggleFullscreen = function() {
             const fullscreenIcon = document.getElementById('fullscreenIcon');
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => {
-                    updateIcon(fullscreenIcon, 'minimize');
-                }).catch(err => {
-                    console.error("Erro ao ativar tela cheia:", err);
-                });
-            } else {
-                document.exitFullscreen().then(() => {
-                    updateIcon(fullscreenIcon, 'maximize');
-                });
+            try {
+                if (!document.fullscreenElement) {
+                    const req = document.documentElement.requestFullscreen();
+                    if (req && typeof req.then === 'function') {
+                        req.then(() => {
+                            updateIcon(fullscreenIcon, 'minimize');
+                        }).catch(err => {
+                            handleFullscreenFailure(err, fullscreenIcon);
+                        });
+                    } else {
+                        updateIcon(fullscreenIcon, 'minimize');
+                    }
+                } else {
+                    const ex = document.exitFullscreen();
+                    if (ex && typeof ex.then === 'function') {
+                        ex.then(() => {
+                            updateIcon(fullscreenIcon, 'maximize');
+                        }).catch(err => {
+                            console.warn("Erro ao sair de tela cheia:", err);
+                        });
+                    } else {
+                        updateIcon(fullscreenIcon, 'maximize');
+                    }
+                }
+            } catch (err) {
+                handleFullscreenFailure(err, fullscreenIcon);
             }
             resetControlsTimer();
+        };
+
+        // Função para lidar com a restrição de segurança sem poluir o console do navegador
+        function handleFullscreenFailure(err, icon) {
+            console.warn("Ecrã inteiro nativo impedido pelas permissões do iframe:", err);
+            updateIcon(icon, 'minimize');
+            showToast(
+                "Dica de Tela Cheia", 
+                "Para colocar a TV em tela cheia real sem restrições, pressione F11 no teclado!", 
+                "monitor"
+            );
         }
 
         function updateIcon(element, iconName) {
             element.setAttribute('data-lucide', iconName);
             lucide.createIcons();
+        }
+
+        // SISTEMA DE TOAST NOTIFICATION
+        function showToast(title, message, iconName = 'info') {
+            const toast = document.getElementById('toastNotification');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastTitle.innerText = title;
+            toastMessage.innerText = message;
+            toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5"></i>`;
+            lucide.createIcons();
+
+            toast.classList.remove('opacity-0', 'translate-y-[-100px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-[-100px]');
+            }, 5500);
         }
 
         // Temporizador para esconder os controlos automaticamente
