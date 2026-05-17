@@ -12,7 +12,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #0d0d12;
+            background-color: #050508;
             overflow: hidden;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
@@ -30,11 +30,20 @@
 
         /* Controlos flutuantes com fade suave */
         .controls-overlay {
-            transition: opacity 0.5s ease;
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
         .controls-overlay.hidden-controls {
             opacity: 0;
             pointer-events: none;
+            transform: translateY(10px);
+        }
+
+        /* Estilo para a engrenagem flutuante */
+        .gear-btn {
+            transition: transform 0.5s ease, opacity 0.3s ease;
+        }
+        .gear-btn:hover {
+            transform: rotate(90deg) scale(1.1);
         }
 
         /* Esconder barra de rolagem de iframes */
@@ -62,52 +71,61 @@
             <div class="absolute inset-0 border-4 border-pink-500/20 rounded-full"></div>
             <div class="absolute inset-0 border-4 border-t-pink-500 rounded-full animate-spin"></div>
         </div>
-        <p class="text-sm text-gray-400 font-medium animate-pulse">A ligar à base de dados segura do evento...</p>
+        <p class="text-sm text-gray-400 font-medium animate-pulse">A carregar configurações seguras...</p>
     </div>
 
-    <!-- 1. ECRÃ DE CONFIGURAÇÃO INICIAL (Painel de Controlo) -->
-    <div id="setupScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950 p-6 overflow-y-auto">
+    <!-- BOTÃO DA ENGRENAGEM (Floating Gear Button) - Sempre acessível de forma discreta -->
+    <button 
+        id="gearButton"
+        onclick="toggleSettingsModal()"
+        class="gear-btn fixed top-6 right-6 z-50 bg-black/40 hover:bg-pink-600/80 text-white p-3.5 rounded-full border border-white/10 backdrop-blur-md shadow-2xl flex items-center justify-center opacity-70 hover:opacity-100 transition-all"
+        title="Configurações do Sistema">
+        <i data-lucide="settings" class="w-6 h-6"></i>
+    </button>
+
+
+    <!-- PAINEL MODAL DE CONFIGURAÇÕES (Engrenagem Overlay) -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-6 overflow-y-auto">
         <div class="max-w-2xl w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 my-8">
             
             <!-- Cabeçalho -->
-            <div class="text-center space-y-2">
-                <div class="inline-flex bg-pink-500/10 text-pink-500 p-3 rounded-2xl mb-1">
-                    <i data-lucide="party-popper" class="w-8 h-8"></i>
+            <div class="flex items-center justify-between border-b border-zinc-850 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-pink-500/10 text-pink-500 p-2.5 rounded-xl">
+                        <i data-lucide="sliders" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-white">Configurações do Ecrã</h2>
+                        <p class="text-xs text-gray-400">Ajuste o comportamento dos vídeos e do QR Code</p>
+                    </div>
                 </div>
-                <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">Configuração do Ecrã da Festa</h1>
-                <p class="text-sm text-gray-400">Configure o vídeo e o QR Code que serão exibidos na TV ou projetor.</p>
-                
-                <!-- Botão de Instalação PWA (Apenas visível se puder ser instalado) -->
-                <div id="pwaInstallContainer" class="hidden justify-center pt-2">
-                    <button id="btnInstallPWA" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center space-x-2 shadow-lg shadow-pink-600/10">
-                        <i data-lucide="download-cloud" class="w-4 h-4"></i>
-                        <span>Instalar Aplicação na TV/Telemóvel 📲</span>
-                    </button>
-                </div>
+                <button onclick="toggleSettingsModal()" class="text-gray-400 hover:text-white p-2 rounded-lg bg-zinc-800/50">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
 
+            <!-- Grid de Opções -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 <!-- PASSO 1: O VÍDEO -->
-                <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+                <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between space-y-4">
                     <div>
                         <div class="flex items-center space-x-2 text-pink-500 font-bold mb-3">
-                            <span class="bg-pink-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
+                            <span class="bg-pink-500 text-black rounded-full w-5 h-5 flex items-center justify-center text-xs">1</span>
                             <h2>Sincronização de Vídeo</h2>
                         </div>
-                        <p class="text-xs text-gray-400 mb-4">Escolha a melhor opção para reproduzir os vídeos:</p>
                         
-                        <!-- Opção A: Carregar Vídeo Local (Altamente Recomendado) -->
-                        <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-pink-500/50 rounded-xl p-4 text-center transition-all">
+                        <!-- Opção A: Carregar Vídeo Local -->
+                        <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border border-dashed border-zinc-800 hover:border-pink-500/40 rounded-xl p-3.5 text-center transition-all mb-3">
                             <input type="file" id="videoFileInput" accept="video/*" class="hidden" onchange="handleLocalVideo(this)">
-                            <i data-lucide="video" class="w-8 h-8 mx-auto text-gray-400 mb-2"></i>
+                            <i data-lucide="video" class="w-6 h-6 mx-auto text-gray-400 mb-1"></i>
                             <span class="block text-xs font-semibold text-gray-300">Carregar Vídeo Local (.mp4)</span>
-                            <span class="block text-[10px] text-gray-500 mt-1">Recomendado (Sem travagens)</span>
+                            <span class="block text-[9px] text-gray-500">Ideal para reprodução estável offline</span>
                         </label>
 
-                        <div class="relative flex py-3 items-center">
+                        <div class="relative flex py-2 items-center">
                             <div class="flex-grow border-t border-zinc-800"></div>
-                            <span class="flex-shrink mx-3 text-gray-600 text-[10px] uppercase font-bold">Ou link web</span>
+                            <span class="flex-shrink mx-2 text-gray-600 text-[9px] uppercase font-bold">Ou link web</span>
                             <div class="flex-grow border-t border-zinc-800"></div>
                         </div>
 
@@ -117,13 +135,24 @@
                             id="videoUrlInput" 
                             placeholder="https://fotoshare.co/e/..." 
                             value="https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ"
-                            class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-pink-500"
+                            class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-pink-500 mb-4"
                         />
+
+                        <!-- Configuração do Tempo de Destaque -->
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Destaque de Novo Vídeo</label>
+                            <select id="displayDurationSelect" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-pink-500">
+                                <option value="45000">Exibir novo vídeo por 45 segundos</option>
+                                <option value="60000" selected>Exibir novo vídeo por 1 minuto</option>
+                                <option value="120000">Exibir novo vídeo por 2 minutos</option>
+                                <option value="99999999">Manter o novo vídeo no ecrã sempre</option>
+                            </select>
+                        </div>
                     </div>
                     
-                    <div id="videoStatus" class="text-[10px] text-zinc-500 mt-3 flex items-center space-x-1">
-                        <i data-lucide="info" class="w-3.5 h-3.5"></i>
-                        <span>Vídeo padrão configurado.</span>
+                    <div id="videoStatus" class="text-[10px] text-zinc-500 mt-2 flex items-center space-x-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-pink-500"></i>
+                        <span>O ecrã nunca irá reiniciar se não houver um novo vídeo.</span>
                     </div>
                 </div>
 
@@ -131,29 +160,28 @@
                 <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center space-x-2 text-pink-500 font-bold mb-3">
-                            <span class="bg-pink-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
-                            <h2>QR Code Fixo do Evento</h2>
+                            <span class="bg-pink-500 text-black rounded-full w-5 h-5 flex items-center justify-center text-xs">2</span>
+                            <h2>QR Code da Festa</h2>
                         </div>
-                        <p class="text-xs text-gray-400 mb-4">Carregue a imagem do QR Code. Ela ficará **guardada de forma permanente**!</p>
-
-                        <!-- Upload do QR Code do Utilizador -->
-                        <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border-2 border-dashed border-zinc-700 hover:border-pink-500/50 rounded-xl p-4 text-center transition-all relative">
+                        
+                        <!-- Upload do QR Code -->
+                        <label class="block cursor-pointer bg-zinc-900 hover:bg-zinc-800 border border-dashed border-zinc-800 hover:border-pink-500/40 rounded-xl p-3.5 text-center transition-all relative">
                             <input type="file" id="qrFileInput" accept="image/*" class="hidden" onchange="handleQRUpload(this)">
                             <div id="qrUploadPreviewContainer" class="flex flex-col items-center">
-                                <i data-lucide="qr-code" class="w-8 h-8 mx-auto text-gray-400 mb-2" id="uploadCloudIcon"></i>
-                                <img id="uploadedQrPreview" src="" class="hidden w-16 h-16 object-contain rounded-lg border border-zinc-700 p-1 mb-2 bg-white" />
-                                <span class="block text-xs font-semibold text-gray-300" id="uploadText">Carregar Imagem do QR Code</span>
-                                <span class="block text-[10px] text-gray-500 mt-1">Clique para selecionar a imagem</span>
+                                <i data-lucide="qr-code" class="w-6 h-6 mx-auto text-gray-400 mb-1" id="uploadCloudIcon"></i>
+                                <img id="uploadedQrPreview" src="" class="hidden w-12 h-12 object-contain rounded-lg border border-zinc-700 p-1 mb-1 bg-white" />
+                                <span class="block text-xs font-semibold text-gray-300" id="uploadText">Carregar Imagem QR</span>
+                                <span class="block text-[9px] text-gray-500">Guarda o ficheiro permanentemente</span>
                             </div>
                         </label>
 
-                        <div class="relative flex py-3 items-center">
+                        <div class="relative flex py-2 items-center">
                             <div class="flex-grow border-t border-zinc-800"></div>
-                            <span class="flex-shrink mx-3 text-gray-600 text-[10px] uppercase font-bold">Autogeração</span>
+                            <span class="flex-shrink mx-2 text-gray-600 text-[9px] uppercase font-bold">Autogeração</span>
                             <div class="flex-grow border-t border-zinc-800"></div>
                         </div>
 
-                        <!-- Opção de QR Code Autogerado se não carregar nada -->
+                        <!-- Checkbox Autogerado -->
                         <div class="flex items-center justify-between bg-zinc-900 p-2.5 rounded-xl border border-zinc-800">
                             <div class="flex items-center space-x-2">
                                 <input type="checkbox" id="autoQrCheckbox" checked class="accent-pink-500 h-4 w-4">
@@ -171,20 +199,32 @@
 
             </div>
 
-            <!-- Botão de Iniciar Apresentação -->
-            <div class="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <!-- Configuração PWA e Status de sincronização -->
+            <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800/80 flex flex-col sm:flex-row gap-4 items-center justify-between">
                 <div class="text-left">
-                    <span class="text-xs text-gray-400 block">Sincronizado de forma segura.</span>
-                    <span id="syncIndicator" class="text-[10px] text-emerald-500 font-medium flex items-center space-x-1">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping mr-1"></span>
-                        <span id="syncText">A iniciar conexão segura...</span>
+                    <span class="text-xs font-bold text-gray-300 block">Sincronização em Tempo Real</span>
+                    <span id="syncIndicator" class="text-[10px] text-emerald-500 font-medium flex items-center mt-1">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping mr-1.5"></span>
+                        <span id="syncText">A carregar modo estável...</span>
                     </span>
                 </div>
+                
+                <!-- Botão de Instalação PWA -->
+                <div id="pwaInstallContainer" class="hidden">
+                    <button id="btnInstallPWA" class="bg-zinc-850 hover:bg-zinc-800 text-white font-bold px-4 py-2 rounded-xl text-xs transition-all flex items-center space-x-2 border border-zinc-750">
+                        <i data-lucide="download-cloud" class="w-4 h-4 text-pink-500"></i>
+                        <span>Instalar como App 📲</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Botão de Salvar -->
+            <div class="pt-4 border-t border-zinc-850 flex justify-end">
                 <button 
-                    onclick="startPresentation()" 
-                    class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-bold px-8 py-4 rounded-2xl shadow-lg shadow-pink-600/20 transition-all flex items-center justify-center space-x-2 text-sm">
-                    <span>Iniciar Apresentação</span>
-                    <i data-lucide="play" class="w-4 h-4"></i>
+                    onclick="applyAndSaveSettings()" 
+                    class="bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-pink-600/20 transition-all flex items-center space-x-2 text-xs uppercase tracking-wider">
+                    <span>Guardar e Aplicar</span>
+                    <i data-lucide="check" class="w-4 h-4"></i>
                 </button>
             </div>
 
@@ -192,8 +232,8 @@
     </div>
 
 
-    <!-- 2. APRESENTAÇÃO / TELA CHEIA -->
-    <div id="presentationContainer" class="hidden absolute inset-0 w-full h-full bg-black flex items-center justify-center z-10">
+    <!-- 2. APRESENTAÇÃO / TELA CHEIA (Inicia automaticamente em background) -->
+    <div id="presentationContainer" class="absolute inset-0 w-full h-full bg-black flex items-center justify-center z-10">
         
         <!-- OPÇÃO A: Reprodutor de Vídeo HTML5 (Excelente para ficheiros locais ou links diretos) -->
         <video 
@@ -205,7 +245,7 @@
             playsinline>
         </video>
 
-        <!-- OPÇÃO B: Visualizador Iframe (Excelente para incorporar a página oficial do LumaBooth) -->
+        <!-- OPÇÃO B: Visualizador Iframe (Excelente para incorporar a página oficial do LumaBooth/FotoShare) -->
         <div id="iframeContainer" class="hidden w-full h-full">
             <iframe 
                 id="presentationIframe" 
@@ -242,40 +282,30 @@
             </div>
         </div>
 
-        <!-- CONTROLOS FLUTUANTES (Ocultam-se automaticamente) -->
-        <div id="presentationControls" class="controls-overlay absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 z-40 flex flex-col justify-between p-6">
+        <!-- CONTROLOS FLUTUANTES INFERIORES (Ocultam-se automaticamente) -->
+        <div id="presentationControls" class="controls-overlay absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 z-40 flex flex-col justify-between p-6">
             
-            <!-- Linha Superior: Info e Botão Sair -->
-            <div class="flex justify-between items-center w-full">
-                <div class="flex items-center space-x-3 bg-zinc-900/80 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
+            <!-- Linha Superior: Status de Sincronização -->
+            <div class="flex justify-between items-start w-full">
+                <div class="flex items-center space-x-3 bg-zinc-900/80 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md shadow-lg">
                     <span class="w-3.5 h-3.5 bg-emerald-500 rounded-full animate-ping"></span>
-                    <span id="syncLiveStatus" class="text-white font-semibold text-xs md:text-sm tracking-wide">Modo de Exibição Ativo</span>
+                    <span id="syncLiveStatus" class="text-white font-semibold text-xs md:text-sm tracking-wide">Modo Festa Ativo</span>
                 </div>
                 
-                <div class="flex items-center space-x-3">
-                    <!-- Botão de Voltar à Configuração -->
-                    <button 
-                        onclick="exitPresentation()" 
-                        class="bg-zinc-900/80 hover:bg-zinc-800 text-white font-medium px-4 py-2 rounded-full border border-white/10 text-xs md:text-sm transition-all flex items-center space-x-2 backdrop-blur-md">
-                        <i data-lucide="settings" class="w-4 h-4"></i>
-                        <span>Ajustar Configurações</span>
-                    </button>
-
-                    <!-- Botão de Tela Cheia Real -->
-                    <button 
-                        onclick="toggleFullscreen()" 
-                        class="bg-zinc-900/80 hover:bg-zinc-800 text-white p-2.5 rounded-full border border-white/10 transition-all backdrop-blur-md"
-                        title="Alternar Tela Cheia">
-                        <i data-lucide="maximize" class="w-4 h-4" id="fullscreenIcon"></i>
-                    </button>
-                </div>
+                <!-- Botão Extra de Tela Cheia Real -->
+                <button 
+                    onclick="toggleFullscreen()" 
+                    class="bg-zinc-900/80 hover:bg-zinc-800 text-white p-2.5 rounded-full border border-white/10 transition-all backdrop-blur-md shadow-lg"
+                    title="Alternar Tela Cheia">
+                    <i data-lucide="maximize" class="w-4.5 h-4.5" id="fullscreenIcon"></i>
+                </button>
             </div>
 
             <!-- Linha Inferior: Controlos do Leitor de Vídeo -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 w-full">
-                <div class="text-left">
+                <div class="text-left bg-black/40 p-4 rounded-2xl backdrop-blur-md border border-white/5">
                     <h2 class="text-lg md:text-2xl font-black text-white drop-shadow-md tracking-tight">Painel de Visualização Festa</h2>
-                    <p class="text-xs text-zinc-300">Aponte o telemóvel para o QR Code à esquerda para salvar o seu vídeo.</p>
+                    <p class="text-xs text-zinc-300">Escanear o QR Code à esquerda para salvar o vídeo imediatamente no seu telemóvel.</p>
                 </div>
 
                 <!-- Botões para controlar vídeo local -->
@@ -287,7 +317,7 @@
                     </button>
                     <button 
                         onclick="toggleMute()" 
-                        class="bg-zinc-900/80 hover:bg-zinc-800 text-white p-3 rounded-full border border-white/10 transition-all flex items-center justify-center">
+                        class="bg-zinc-900/80 hover:bg-zinc-800 text-white p-3 rounded-full border border-white/10 transition-all flex items-center justify-center backdrop-blur-md">
                         <i data-lucide="volume-x" class="w-5 h-5" id="muteIcon"></i>
                     </button>
                 </div>
@@ -342,7 +372,6 @@
                     event.waitUntil(clients.claim());
                 });
                 self.addEventListener('fetch', (event) => {
-                    // Ignora requisições de API de terceiros como o Firestore ou allorigins para evitar quebras
                     if (event.request.url.includes('firebase') || event.request.url.includes('allorigins')) {
                         return;
                     }
@@ -369,43 +398,32 @@
         const btnInstallPWA = document.getElementById('btnInstallPWA');
 
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Impedir que o browser mostre a faixa padrão
             e.preventDefault();
-            // Guardar o evento para que possa ser acionado mais tarde
             deferredPrompt = e;
-            // Exibir o botão elegante de instalação
             pwaInstallContainer.classList.remove('hidden');
             pwaInstallContainer.classList.add('flex');
         });
 
         btnInstallPWA.addEventListener('click', async () => {
             if (!deferredPrompt) return;
-            // Mostrar o banner de instalação
             deferredPrompt.prompt();
-            // Esperar pela resposta do utilizador
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
-                console.log('Utilizador aceitou instalar o PWA.');
                 pwaInstallContainer.classList.add('hidden');
             }
             deferredPrompt = null;
-        });
-
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('Aplicação da Festa instalada com sucesso como PWA!');
-            pwaInstallContainer.classList.add('hidden');
         });
     </script>
 
     <!-- Firebase SDK e Lógica da Aplicação -->
     <script type="module">
-        // Importar Firebase Core, Auth e Firestore de acordo com as regras ambientais obrigatórias
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Elementos globais do DOM
-        const setupScreen = document.getElementById('setupScreen');
+        // Elementos do DOM
+        const settingsModal = document.getElementById('settingsModal');
+        const gearButton = document.getElementById('gearButton');
         const presentationContainer = document.getElementById('presentationContainer');
         const presentationVideo = document.getElementById('presentationVideo');
         const presentationIframe = document.getElementById('presentationIframe');
@@ -413,6 +431,7 @@
         const displayQrCode = document.getElementById('displayQrCode');
         const videoFileInput = document.getElementById('videoFileInput');
         const videoUrlInput = document.getElementById('videoUrlInput');
+        const displayDurationSelect = document.getElementById('displayDurationSelect');
         const qrFileInput = document.getElementById('qrFileInput');
         const autoQrCheckbox = document.getElementById('autoQrCheckbox');
         const presentationControls = document.getElementById('presentationControls');
@@ -431,15 +450,21 @@
         let currentUser = null;
         let configDocRef = null;
         let localVideoBlobUrl = null;
-        let qrCodeBase64 = null; // Guardará o QR Code em Base64
-        let lastPlayedVideoUrl = ""; // Controla o link do vídeo ativo para evitar loops
+        let qrCodeBase64 = null;
+        let lastPlayedVideoUrl = ""; 
         let autoUpdateIntervalId = null;
         let controlsTimeout = null;
-
-        // Deteção Inteligente de Ambiente (Nuvem ou Ficheiro Local Autónomo)
         let useFirebase = false;
         let app, auth, db, appId;
 
+        // Temporizador para voltar à galeria após mostrar novidade
+        let resetToGalleryTimeoutId = null;
+
+        // Links Padrão da Galeria
+        const DEFAULT_URL = "https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
+        const DEFAULT_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
+
+        // Inicializar Firebase se as configurações estiverem disponíveis
         try {
             appId = typeof __app_id !== 'undefined' ? __app_id : null;
             if (appId && typeof __firebase_config !== 'undefined' && __firebase_config) {
@@ -450,17 +475,13 @@
                 useFirebase = true;
             }
         } catch (e) {
-            console.warn("A correr em modo offline/local autónomo (fora da plataforma).");
+            console.warn("A correr em modo offline/local autónomo.");
         }
 
-        // Link padrão
-        const DEFAULT_URL = "https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
-        const DEFAULT_QR_URL = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://fotoshare.co/e/dDqHfaeXlb-C389cD-qeJ";
-
-        // Inicializar os ícones Lucide
+        // Inicializar Lucide Icons
         lucide.createIcons();
 
-        // 1. INICIALIZAÇÃO E DETEÇÃO DE AMBIENTE (REGRA 3)
+        // Inicialização de Segurança
         window.addEventListener('load', async () => {
             if (useFirebase) {
                 try {
@@ -478,33 +499,32 @@
             }
         });
 
-        // Configuração do Modo Local Autónomo (Para rodar fora do chat/plataforma sem dar erro)
         function activateLocalMode() {
             useFirebase = false;
             syncIndicator.innerHTML = `
-                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1"></span>
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-1.5"></span>
                 <span>Modo Local Autónomo Ativo</span>
             `;
-            // Carregar as configurações guardadas localmente no browser
             loadLocalFallback();
             loadingScreen.classList.add('hidden');
+            startPresentationFlow(true); // Iniciar apresentação imediatamente
         }
 
         if (useFirebase) {
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     currentUser = user;
-                    // Caminho privado seguro no Firestore (REGRA 1)
                     configDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
-                    syncText.innerText = "Ligação estável à nuvem ativa";
+                    syncText.innerText = "Sincronização em nuvem ativa";
                     await loadSavedConfig();
                 } else {
                     loadingScreen.classList.add('hidden');
+                    startPresentationFlow(true);
                 }
             });
         }
 
-        // 2. CARREGAR CONFIGURAÇÃO (Firestore com Fallback Seguro para LocalStorage)
+        // Carregar configurações do banco ou do localStorage
         async function loadSavedConfig() {
             try {
                 if (!configDocRef) return;
@@ -512,7 +532,7 @@
                 
                 if (docSnap.exists()) {
                     applyLoadedConfig(docSnap.data());
-                    showToast("Configurações Carregadas", "QR Code e link sincronizados com a nuvem!", "check-check");
+                    showToast("Configurações Carregadas", "Tudo sincronizado!", "check-check");
                 } else {
                     loadLocalFallback();
                 }
@@ -521,6 +541,7 @@
                 loadLocalFallback();
             } finally {
                 loadingScreen.classList.add('hidden');
+                startPresentationFlow(true); // Iniciar apresentação assim que carregar
             }
         }
 
@@ -530,10 +551,10 @@
                 if (localData) {
                     const data = JSON.parse(localData);
                     applyLoadedConfig(data);
-                    showToast("Configurações Locais", "Configurações restauradas do seu navegador com sucesso!", "check-check");
+                    showToast("Restaurado", "Dados carregados localmente!", "check-check");
                 }
             } catch (e) {
-                console.error("Erro ao ler LocalStorage local:", e);
+                console.error("Erro ao ler LocalStorage:", e);
             }
         }
 
@@ -541,7 +562,6 @@
             if (data.galleryUrl) {
                 videoUrlInput.value = data.galleryUrl;
             }
-
             if (data.qrCodeBase64) {
                 qrCodeBase64 = data.qrCodeBase64;
                 uploadedQrPreview.src = qrCodeBase64;
@@ -549,40 +569,39 @@
                 uploadCloudIcon.classList.add('hidden');
                 uploadText.innerText = "Novo QR Code Guardado!";
                 btnResetQr.classList.remove('hidden');
-                qrDbStatus.innerText = "QR Code Carregado e Ativo!";
+                qrDbStatus.innerText = "QR Code Personalizado Ativo!";
                 autoQrCheckbox.checked = false;
+            }
+            if (data.displayDuration) {
+                displayDurationSelect.value = data.displayDuration;
             }
         }
 
-        // 3. SALVAR CONFIGURAÇÕES (Salva sempre no LocalStorage para funcionar fora do chat + Firestore se ativo)
+        // Salvar configurações
         async function saveConfigToCloud() {
             const configData = {
                 galleryUrl: videoUrlInput.value.trim(),
                 qrCodeBase64: qrCodeBase64,
+                displayDuration: displayDurationSelect.value,
                 updatedAt: new Date().toISOString()
             };
 
-            // Guarda sempre localmente no navegador (Evita perder dados ao atualizar fora do chat!)
             try {
                 localStorage.setItem('party_screen_config', JSON.stringify(configData));
             } catch (e) {
-                console.error("Erro ao salvar LocalStorage local:", e);
+                console.error(e);
             }
 
             if (useFirebase && currentUser && configDocRef) {
                 try {
                     await setDoc(configDocRef, configData, { merge: true });
-                    showToast("Sincronizado", "QR Code e configurações salvos em segurança na nuvem!", "cloud-lightning");
                 } catch (error) {
-                    console.error("Erro ao guardar dados:", error);
-                    showToast("Erro de Sincronização", "Ocorreu um erro ao salvar na nuvem.", "alert-octagon");
+                    console.error("Erro ao salvar:", error);
                 }
-            } else {
-                showToast("Guardado Localmente", "Configurações guardadas neste navegador!", "check-circle");
             }
         }
 
-        // 4. TRATAR O CARREGAMENTO DE IMAGEM DO QR CODE
+        // Upload de Imagem QR Code
         window.handleQRUpload = function(input) {
             const file = input.files[0];
             if (file) {
@@ -596,15 +615,13 @@
                     btnResetQr.classList.remove('hidden');
                     qrDbStatus.innerText = "QR Code Personalizado Ativo!";
                     autoQrCheckbox.checked = false;
-                    
-                    await saveConfigToCloud();
                 };
                 reader.readAsDataURL(file);
             }
         };
 
-        // Resetar para o QR Code padrão do dinossauro
-        window.resetToDefaultQr = async function() {
+        // Resetar para QR padrão
+        window.resetToDefaultQr = function() {
             qrCodeBase64 = null;
             uploadedQrPreview.src = "";
             uploadedQrPreview.classList.add('hidden');
@@ -613,12 +630,10 @@
             btnResetQr.classList.add('hidden');
             qrDbStatus.innerText = "Usará o QR Code padrão.";
             autoQrCheckbox.checked = true;
-            
-            await saveConfigToCloud();
             showToast("Restaurado", "Retornou ao QR Code padrão.", "rotate-ccw");
         };
 
-        // Tratar o carregamento de vídeo local do computador
+        // Carregar Vídeo Local
         window.handleLocalVideo = function(input) {
             const file = input.files[0];
             if (file) {
@@ -628,16 +643,35 @@
                 localVideoBlobUrl = URL.createObjectURL(file);
                 document.getElementById('videoStatus').innerHTML = `
                     <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                    <span class="text-emerald-500 font-semibold">Vídeo local pronto: ${file.name}</span>
+                    <span class="text-emerald-500 font-semibold">Pronto: ${file.name}</span>
                 `;
                 lucide.createIcons();
             }
         };
 
-        // 5. MONITORAMENTO DA GALERIA DO FOTOSHARE EM TEMPO REAL
+        // Toggle do painel de Configurações (Engrenagem)
+        window.toggleSettingsModal = function() {
+            if (settingsModal.classList.contains('hidden')) {
+                settingsModal.classList.remove('hidden');
+                settingsModal.classList.add('flex');
+            } else {
+                settingsModal.classList.add('hidden');
+                settingsModal.classList.remove('flex');
+            }
+        };
+
+        // Botão "Guardar e Aplicar" dentro da Engrenagem
+        window.applyAndSaveSettings = async function() {
+            await saveConfigToCloud();
+            toggleSettingsModal();
+            startPresentationFlow(false);
+            showToast("Aplicado com Sucesso", "As configurações do ecrã foram atualizadas!", "sparkles");
+        };
+
+        // Algoritmo de Busca Inteligente do Novo Vídeo
         async function fetchLatestGalleryItem(galleryUrl) {
             try {
-                // Utilização de proxy CORS rápido para ler a galeria de forma síncrona
+                // Allorigins CORS Proxy para evitar bloqueio CORS do navegador
                 const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(galleryUrl)}`;
                 const response = await fetch(proxyUrl);
                 if (!response.ok) return null;
@@ -646,7 +680,7 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Extrair links de sessões ou links diretos de vídeo no HTML da galeria
+                // Procurar links de sessões (/g/...) ou vídeos da galeria do FotoShare
                 const sessionLinks = Array.from(doc.querySelectorAll('a'))
                     .map(a => a.getAttribute('href'))
                     .filter(href => href && (href.includes('/g/') || href.includes('/s/')));
@@ -656,7 +690,7 @@
                     return relativeLink.startsWith('http') ? relativeLink : `https://fotoshare.co${relativeLink}`;
                 }
 
-                // Fallback de segurança para arquivos MP4 diretos
+                // Fallback para deteção direta de vídeos MP4 no HTML
                 const mp4Matches = html.match(/"url":"([^"]+\.mp4)"/) || html.match(/src="([^"]+\.mp4)"/);
                 if (mp4Matches && mp4Matches[1]) {
                     return mp4Matches[1];
@@ -664,26 +698,44 @@
 
                 return null;
             } catch (err) {
-                console.warn("Erro ao ler galeria. Tentando novamente...", err);
+                console.warn("Erro de conexão CORS ou parsing de galeria:", err);
                 return null;
             }
         }
 
-        // 6. MOTOR DE AUTO-SINCRONIZAÇÃO DE VÍDEOS
+        // Motor Inteligente de Auto-Sincronização (Corrigido para não reiniciar vídeos)
         async function runAutoUpdateEngine() {
             const galleryUrl = videoUrlInput.value.trim();
             if (!galleryUrl) return;
 
-            syncLiveStatus.innerText = "A procurar novos vídeos na galeria...";
+            syncLiveStatus.innerText = "A monitorizar a galeria...";
             
             let latestUrl = await fetchLatestGalleryItem(galleryUrl);
 
-            // Se for detetado um novo vídeo diferente do que está no ecrã neste momento, atualiza automaticamente
+            // SÓ ATUALIZA E REPRODUZ SE REALMENTE FOR DETECTADO UM NOVO VÍDEO DIFERENTE
             if (latestUrl && latestUrl !== lastPlayedVideoUrl) {
                 lastPlayedVideoUrl = latestUrl;
                 updatePresentationSource(latestUrl);
-                showToast("Novo Vídeo!", "Detetámos um novo vídeo do seu convidado! A reproduzir...", "sparkles");
+                showToast("Novo Vídeo!", "Detetámos um novo vídeo! A atualizar o ecrã...", "party-popper");
+
+                // Configurar o tempo para voltar à galeria automática, se não estiver definido para "Manter sempre"
+                const displayDuration = parseInt(displayDurationSelect.value, 10);
+                
+                if (resetToGalleryTimeoutId) {
+                    clearTimeout(resetToGalleryTimeoutId);
+                }
+
+                if (displayDuration < 99999999) {
+                    resetToGalleryTimeoutId = setTimeout(() => {
+                        // Volta para a visualização da galeria geral
+                        lastPlayedVideoUrl = galleryUrl;
+                        updatePresentationSource(galleryUrl);
+                        showToast("Galeria Ativa", "A retornar aos slides da galeria oficial.", "monitor");
+                    }, displayDuration);
+                }
             } else {
+                // SE NÃO HOUVER VÍDEOS NOVOS, NÃO FAZEMOS NADA! 
+                // Isto garante que o vídeo ou slide atual continua a passar sem interrupções!
                 syncLiveStatus.innerText = "Ecrã Ativo e Sincronizado";
             }
         }
@@ -696,31 +748,36 @@
                 presentationVideo.src = sourceUrl;
                 presentationVideo.classList.remove('hidden');
                 localVideoControls.classList.remove('hidden');
-                presentationVideo.play().catch(e => console.log("Autoplay mitigado."));
+                presentationVideo.play().catch(e => console.log("Autoplay mitigado pelo navegador."));
             } else {
                 presentationVideo.src = "";
                 presentationVideo.classList.add('hidden');
                 localVideoControls.classList.add('hidden');
                 
-                presentationIframe.src = sourceUrl;
+                // Só atualiza o src se for diferente, evitando loops e reloads desnecessários
+                if (presentationIframe.src !== sourceUrl) {
+                    presentationIframe.src = sourceUrl;
+                }
                 iframeContainer.classList.remove('hidden');
             }
         }
 
-        // 7. INICIAR MODO APRESENTAÇÃO
-        window.startPresentation = async function() {
+        // Iniciar fluxo completo de exibição
+        function startPresentationFlow(firstLoad) {
             const isUsingLocalVideo = !!localVideoBlobUrl;
             const videoUrl = videoUrlInput.value.trim();
 
-            if (!videoUrl && !isUsingLocalVideo) {
-                showToast("Falta o link", "Por favor preencha o link da galeria do FotoShare.", "alert-circle");
-                return;
+            if (autoUpdateIntervalId) {
+                clearInterval(autoUpdateIntervalId);
+                autoUpdateIntervalId = null;
             }
 
-            // Guardar as configurações finais (LocalStorage garantido + Nuvem se ativa)
-            await saveConfigToCloud();
+            if (resetToGalleryTimeoutId) {
+                clearTimeout(resetToGalleryTimeoutId);
+                resetToGalleryTimeoutId = null;
+            }
 
-            // Configurar QR Code exibido
+            // Aplicar QR Code
             if (qrCodeBase64) {
                 displayQrCode.src = qrCodeBase64;
             } else if (autoQrCheckbox.checked && videoUrl) {
@@ -729,7 +786,7 @@
                 displayQrCode.src = DEFAULT_QR_URL;
             }
 
-            // Definir o ecrã inicial de vídeo
+            // Aplicar Vídeo ou Iframe
             if (isUsingLocalVideo) {
                 presentationIframe.src = "";
                 iframeContainer.classList.add('hidden');
@@ -737,39 +794,25 @@
                 presentationVideo.src = localVideoBlobUrl;
                 presentationVideo.classList.remove('hidden');
                 localVideoControls.classList.remove('hidden');
-                
                 presentationVideo.play().catch(err => {
-                    console.log("Autoplay bloqueado pelo navegador.");
+                    console.log("Autoplay mitigado.");
                 });
             } else {
                 lastPlayedVideoUrl = videoUrl;
                 updatePresentationSource(videoUrl);
-            }
-
-            // Alternar Ecrãs
-            setupScreen.classList.add('hidden');
-            presentationContainer.classList.remove('hidden');
-
-            // Iniciar o motor de sincronização automática e em tempo real dos vídeos
-            if (!isUsingLocalVideo) {
+                
+                // Iniciar motor de busca inteligente sem reloads cegos (Busca silenciosa a cada 15s)
                 runAutoUpdateEngine();
-                autoUpdateIntervalId = setInterval(runAutoUpdateEngine, 20000); // Verifica novos uploads a cada 20 segundos
+                autoUpdateIntervalId = setInterval(runAutoUpdateEngine, 15000); 
             }
-            
-            resetControlsTimer();
-            showToast("Apresentação Iniciada", "Use a tecla F11 para deixar a TV em tela cheia total!", "monitor-play");
-        };
 
-        // Voltar ao Painel de Configurações
-        window.exitPresentation = function() {
-            if (autoUpdateIntervalId) {
-                clearInterval(autoUpdateIntervalId);
-                autoUpdateIntervalId = null;
+            // Esconder tela de carregamento se for o primeiro boot
+            if (firstLoad) {
+                loadingScreen.classList.add('hidden');
             }
-            presentationVideo.pause();
-            presentationContainer.classList.add('hidden');
-            setupScreen.classList.remove('hidden');
-        };
+
+            resetControlsTimer();
+        }
 
         // CONTROLOS DO VÍDEO LOCAL
         window.togglePlay = function() {
@@ -795,7 +838,7 @@
             resetControlsTimer();
         };
 
-        // ALTERNAR TELA CHEIA DO NAVEGADOR COM CAPTURA DE ERRO DE POLÍTICA (PREVINE TRAVAMENTOS)
+        // GESTÃO DE TELA CHEIA COMPATÍVEL COM CONTÊINERES DE SEGURANÇA
         window.toggleFullscreen = function() {
             const fullscreenIcon = document.getElementById('fullscreenIcon');
             try {
@@ -816,7 +859,7 @@
                         ex.then(() => {
                             updateIcon(fullscreenIcon, 'maximize');
                         }).catch(err => {
-                            console.warn("Erro ao sair de tela cheia:", err);
+                            console.warn(err);
                         });
                     } else {
                         updateIcon(fullscreenIcon, 'maximize');
@@ -828,13 +871,12 @@
             resetControlsTimer();
         };
 
-        // Função para lidar com a restrição de segurança sem poluir o console do navegador
         function handleFullscreenFailure(err, icon) {
-            console.warn("Ecrã inteiro nativo impedido pelas permissões do iframe:", err);
+            console.warn("Ecrã inteiro nativo impedido por regras de iframe:", err);
             updateIcon(icon, 'minimize');
             showToast(
                 "Dica de Tela Cheia", 
-                "Para colocar a TV em tela cheia real sem restrições, pressione F11 no teclado!", 
+                "Para colocar a TV em tela cheia total, pressione F11 no teclado do computador!", 
                 "monitor"
             );
         }
@@ -844,7 +886,7 @@
             lucide.createIcons();
         }
 
-        // SISTEMA DE TOAST NOTIFICATION
+        // SISTEMA DE NOTIFICAÇÃO TOAST
         function showToast(title, message, iconName = 'info') {
             const toast = document.getElementById('toastNotification');
             const toastTitle = document.getElementById('toastTitle');
@@ -865,16 +907,20 @@
             }, 5500);
         }
 
-        // Temporizador para esconder os controlos automaticamente
+        // Esconder a engrenagem e controles flutuantes automaticamente se não houver movimento
         function resetControlsTimer() {
             presentationControls.classList.remove('hidden-controls');
+            gearButton.style.opacity = "1";
             clearTimeout(controlsTimeout);
             controlsTimeout = setTimeout(() => {
                 presentationControls.classList.add('hidden-controls');
-            }, 3000);
+                // Se a modal não estiver aberta, oculta a engrenagem para deixar o ecrã totalmente limpo
+                if (settingsModal.classList.contains('hidden')) {
+                    gearButton.style.opacity = "0.08"; // Fica quase impercetível no canto
+                }
+            }, 3500);
         }
 
-        // Registar movimentos para os controlos flutuantes
         document.addEventListener('mousemove', resetControlsTimer);
         document.addEventListener('touchstart', resetControlsTimer);
         document.addEventListener('click', resetControlsTimer);
